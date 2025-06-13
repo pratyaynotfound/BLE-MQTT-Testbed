@@ -69,7 +69,56 @@ sudo apt install mosquitto mosquitto-clients
 sudo systemctl enable mosquitto
 
 ```
-### 3. Run the BLE-MQTT script:
+## Configuration: UUIDs & MQTT Setup
+
+### BLE UUIDs
+
+In **both the ESP32 code** and **Python script**, update these UUIDs if needed:
+
+```cpp
+// In esp32_ble_dht.ino
+NimBLEService *sensorService = bleServer->createService("12345678-1234-1234-1234-123456789abc");
+sensorCharacteristic = sensorService->createCharacteristic("abcd", NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY);
+```
+```python
+# In ble_mqtt_gateway.py
+UUID = "12345678-1234-1234-1234-123456789abc"
+CHAR_UUID = "abcd"
+```
+### MQTT Configuration
+In the Python script (ble_mqtt_gateway.py), update:
+```python
+MQTT_BROKER = "localhost"      # Change to your MQTT broker IP or hostname
+MQTT_PORT = 1883               # Default MQTT port
+MQTT_USER = "iotuser"          # Your MQTT username
+MQTT_PASS = "12345678"         # Your MQTT password
+MQTT_TOPIC = "esp32/sensor"    # Topic where messages are published
+```
+If you're using Mosquitto with password protection, create a user:
+```bash
+sudo mosquitto_passwd -c /etc/mosquitto/passwd iotuser
+# Enter your desired password, e.g., 12345678
+
+# Then edit Mosquitto config:
+sudo nano /etc/mosquitto/mosquitto.conf
+```
+
+Add or ensure the following lines exist in the mosquito configuration:
+```conf
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+listener 1883
+```
+Then restart the broker:
+```bash
+sudo systemctl restart mosquitto
+```
+To test MQTT:
+```bash
+mosquitto_sub -h localhost -t esp32/sensor -u iotuser -P 12345678 -v
+```
+
+## Run the BLE-MQTT script:
 ```
 python3 ble_mqtt_gateway.py
 ```
